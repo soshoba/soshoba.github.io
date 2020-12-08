@@ -1,0 +1,103 @@
+---
+title: 'Project 1: Exploratory Data Analysis'
+author: "SDS348"
+date: '2020-12-07'
+output:
+  pdf_document:
+    toc: no
+  html_document:
+    toc: yes
+    toc_float:
+      collapsed: no
+      smooth_scroll: yes
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE, eval = TRUE, fig.align = "center", warning = F, message = F,
+tidy=TRUE, tidy.opts=list(width.cutoff=60), R.options=list(max.print=100))
+```
+
+## Samuel Oshoba's (soo328) Data Exploration and Wrangling Project
+
+### Introduction
+The datasets I have chosen are from health.gov and are related to the ongoing pandemic. COVID-19 has been the topic of all our attention for several months now, and I found it appropriate that I'd analyze some available data surrounding it, to potentially observe some of the trends for myself. One of the datasets details the amount and percentage of occupied ICU beds across counties of different states, and the other dataset details the COVID-19 safety policies that are in place in the area. I expected to see that those areas with the strictest policies would have a lower percentage of occupied ICU beds. 
+
+### Joining data:
+```{r}
+library(tidyverse)
+covid_icu_beds <- read.csv("covid.icu.beds.csv")
+covid_policies <- read.csv("covid.policies.csv")
+
+fulldata <- full_join(covid_icu_beds,covid_policies, by=c("state"="state_id"))
+fulldata$Staffed.Adult.ICU.Beds.Occupied.Estimated <- as.numeric(as.character(fulldata$Staffed.Adult.ICU.Beds.Occupied.Estimated))
+fulldata$Total.Staffed.Adult.ICU.Beds <- as.numeric(as.character(fulldata$Total.Staffed.Adult.ICU.Beds))
+fulldata$Percentage.of.Staffed.Adult.ICU.Beds.Occupied.Estimated <- as.numeric(as.character(fulldata$Percentage.of.Staffed.Adult.ICU.Beds.Occupied.Estimated))
+```
+Chose to utilize the full join so as to preserve the most amount of cases. However, in doing so this introduced a lot of NA's into the dataset, which I eventually removed. The join variable I used was state, and this was because it was their main variable in common.
+
+#Wrangling
+```{r}
+#removing nas and unnecessary columns
+covid.nas <- fulldata %>% na.omit() %>% select(-4,-5,-7,-8,-10,-11,-18,-19)
+#summary stats
+covid.by.state.policy <- covid.nas %>% group_by(state, policy_type) %>% summarize(mean_occupied = mean(Percentage.of.Staffed.Adult.ICU.Beds.Occupied.Estimated), sd_occupied = sd(Percentage.of.Staffed.Adult.ICU.Beds.Occupied.Estimated), n_occupied = n())
+head(covid.by.state.policy)
+covid.by.policy <- covid.nas %>% group_by(policy_type) %>% summarize(mean_occupied= mean(Percentage.of.Staffed.Adult.ICU.Beds.Occupied.Estimated), sd_occupied = sd(Percentage.of.Staffed.Adult.ICU.Beds.Occupied.Estimated), n_occupied = n(), max(mean_occupied), min(mean_occupied))
+covid.nas %>% summarize(max_occupied_beds = max(Total.Staffed.Adult.ICU.Beds), min_occupied_beds = min(Total.Staffed.Adult.ICU.Beds))
+# Using more Dplyr functions
+covid.by.state.policy %>% select(state,mean_occupied) %>% arrange(-mean_occupied)
+covid.nas %>% filter(policy_level == "county") %>% mutate(unoccupied_beds = Total.Staffed.Adult.ICU.Beds - Staffed.Adult.ICU.Beds.Occupied.Estimated) %>% select(state,Staffed.Adult.ICU.Beds.Occupied.Estimated,policy_type,unoccupied_beds)
+```
+My first set of summary statistics was the mean, standard deviation, and n of percentage of occupied beds, all grouped by state and policy type. The next set of summary statistics were the same as the prior one, except grouped only by policy type. Next the max and min amounts of total ICU beds were found, and then the same were found for the amount of occupied ICU beds. Finally, utilized additional dplyr functions like filter to find county level policies, determine how many unoccupied beds there with mutate, and select and arrange to display the ranking by state of percent occupied ICU beds.  
+
+#Tidying Up
+```{r}
+# Practice tidying up
+covid.longer <- covid.by.state.policy %>% pivot_longer(c(3:5), names_to= "stat", values_to="value")
+head(covid.longer)
+covid.wider <- covid.longer %>% pivot_wider(names_from = "stat", values_from = "value")
+```
+My data was already fairly tidy, so chose to simply practice some of the tidying functions on some of my summary stats. Chose to pivot 3 different summary stats into one column, and then pivot them wider to undo that.
+
+
+#Visualizations    
+```{r error=TRUE}
+#visualizations
+cordata <- covid.nas %>% select(c(3:5))
+cormat <- signif(cor(cordata),2)
+heatmap(cormat)
+
+library(ggplot2)
+ggplot(data = covid.by.policy, mapping = aes(x=policy_type, y=mean_occupied, fill=n_occupied)) + geom_bar(stat = 'summary') + labs(title = "Mean percent of occupied beds by Policy type", x = "Policy Type"  ,y = "Mean percent of occupied beds") + theme(axis.text.x = element_text(angle = 90, vjust = 0.5, hjust=1)) + scale_y_continuous("Mean percent of occupied beds", breaks=seq(0,60, by=5))
+covid.by.state <- covid.nas %>% group_by(covid.nas$state) %>% summarize(mean_occupied= mean(Percentage.of.Staffed.Adult.ICU.Beds.Occupied.Estimated), sd_occupied = sd(Percentage.of.Staffed.Adult.ICU.Beds.Occupied.Estimated), n_occupied = n(), max(mean_occupied), min(mean_occupied))
+distinct.states <- covid.by.state %>% distinct()
+ggplot(data = covid.by.state.policy,mapping = aes(x=state, y=mean_occupied, fill=sd_occupied)) + geom_histogram(stat = "identity") + theme(axis.text.x = element_text(angle = 30, vjust = 0.5, hjust=1)) + labs(title = "Mean number of occupied beds by State", x = "State"  ,y = "Mean number of occupied beds")
+```
+  
+For the correlation heatmap, strong corrleations are deep red/burgundy, weaker ones are orange, and the weakest are yellow. 
+
+The bar plot of mean percent of occupied beds across policy types shows no conclusive evidence of relationships. On the x-axis was the type of restrictive policy enacted, and on the y-axis was the mean percent of occupied ICU beds. The plot is relatively even across the board and suggests that the COVID restriction policies didn't really have a significant impact on the percentage of occupied ICU beds. This was actually a suprising result, as it would make sense for the level of activity to correlate with the amount of COVID cases and thus ICU beds being used.  
+
+The next plot was a histogram mean amount of occupied ICU beds in each hospital by State. It should also be noted that the histogram was colored by the standard deviation, with lighter blues having the most deviation. This histogram has much clearer results than the last graph, and it can be observed that the state with the highest average amount of occupied ICU beds is Idaho. The state with the seemgingly lowest average is Utah.
+    
+#k-means/PAM clustering or PCA on (at least) your numeric variables.
+
+```{r}
+#pam
+library(cluster)
+covid.pam <- covid.nas %>% select(c(3:5)) %>% pam(k=4)
+covid.pam
+pam.clust <- covid.nas %>% select(c(3:5)) %>% mutate(cluster = as.factor(covid.pam$clustering))
+pam.clust %>% ggplot(aes(Percentage.of.Staffed.Adult.ICU.Beds.Occupied.Estimated,`Total.Staffed.Adult.ICU.Beds`,color= cluster)) + geom_point()
+```
+The plot of the PAM displays 4 distinct groups. There's a group of low total amount of beds, slightly greater, medium, and high amount of total beds. However, the amount of beds seems to be main determination of clustering, as there is a significant amount of variation within the percentage of occupied ICU beds, especially in the lower clusters. There doesn't seem to be a significant relationship between the percentage of occupied ICU beds and the total amount of ICU beds. This makes sense conceptually as just because the amount of ICU beds increases, doesn't mean the relative demand for them will change.
+
+<P style="page-break-before: always">
+\newpage
+options(tinytex.verbose = TRUE)   
+...
+
+
+
+
+

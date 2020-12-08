@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="author" content="Samuel Oshoba" />
+    
+    <link rel="shortcut icon" type="image/x-icon" href="../../../../../img/favicon.ico">
+    <title>Introductory Statistical Functions in Python</title>
+    <meta name="generator" content="Hugo 0.79.0" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="../../../../../css/main.css" />
+    <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:200,400,200bold,400old" />
+    
+    <!--[if lt IE 9]>
+			<script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+			<script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+		<![endif]-->
+
+    
+  </head>
+
+  <body>
+    <div id="wrap">
+      
+      <nav class="navbar navbar-default">
+  <div class="container">
+    <div class="navbar-header">
+      <a class="navbar-brand" href="../../../../../"><i class="fa fa-home"></i></a>
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+    </div>
+    <div class="navbar-collapse collapse" id="navbar">
+      <ul class="nav navbar-nav navbar-right">
+      
+        
+        <li><a href="../../../../../post/">BLOG</a></li>
+        
+        <li><a href="../../../../../projects/">PROJECTS</a></li>
+        
+        <li><a href="../../../../../resume/">RESUME</a></li>
+        
+      
+      </ul>
+    </div>
+  </div>
+</nav>
+
+      <div class="container">
+        <div class="blog-post">
+          <h3>
+            <strong><a href="../../../../../post/2020/12/07/introductory-statistical-functions-in-python/">Introductory Statistical Functions in Python</a></strong>
+          </h3>
+        </div>
+ 
+<div class="blog-title">
+          <h4>
+         December 7, 2020 
+            &nbsp;&nbsp;
+            
+            <span class="label label-success">python</span>
+            
+            <span class="label label-success">R Markdown</span>
+            
+            <span class="label label-success">stats</span>
+            
+          </h4>
+        </div>
+
+        <div class="panel panel-default">
+          <div class="panel-body">
+            <div class="blogpost">
+              
+
+
+<div class="figure">
+<img src="../../../../../post/2020-12-07-introductory-statistical-functions-in-python_files/python.jpg" />
+
+</div>
+<div id="introduction" class="section level1">
+<h1>Introduction</h1>
+<p>Throughout SDS 348, I and other students primarily learned how to do a variety of functions using R. However, in the latter portion of the course we were introduced to Python, and learned that the two languages weren't too different from each other. In this blog, I'll take you through some very basic statistical functions that can be performed within Python.</p>
+</div>
+<div id="importing-and-observing-datasets" class="section level1">
+<h1>Importing and observing datasets</h1>
+<p>The process of doing so in R is quite simple, especially when dealing with datasets already in R. To observe the dataset, is as easy as using the head function, and nrow and ncol to quantify row and column numbers.</p>
+<pre class="r"><code>head(quakes)</code></pre>
+<pre><code>##      lat   long depth mag stations
+## 1 -20.42 181.62   562 4.8       41
+## 2 -20.62 181.03   650 4.2       15
+## 3 -26.00 184.10    42 5.4       43
+## 4 -17.97 181.66   626 4.1       19
+## 5 -20.42 181.96   649 4.0       11
+## 6 -19.68 184.31   195 4.0       12</code></pre>
+<pre class="r"><code>nrow(quakes)</code></pre>
+<pre><code>## [1] 1000</code></pre>
+<pre class="r"><code>ncol(quakes)</code></pre>
+<pre><code>## [1] 5</code></pre>
+<p>In Python however, importing the data is a little more arduous, and there is a different function to find row and column numbers; &quot;shape&quot;.</p>
+<pre class="python"><code>import pandas as pd
+quakes=pd.read_csv(&quot;https://vincentarelbundock.github.io/Rdatasets/csv/datasets/quakes.csv&quot;,index_col=0)
+quakes.shape</code></pre>
+<pre><code>## (1000, 5)</code></pre>
+</div>
+<div id="basic-functions" class="section level1">
+<h1>Basic functions</h1>
+<p>The basic functions that we'll be discussing are minimum, maximum, median, and mean values. Below will be a comparison of how they are calculated in R, and in Python</p>
+<pre class="r"><code>min(quakes$mag)</code></pre>
+<pre><code>## [1] 4</code></pre>
+<pre class="r"><code>max(quakes$mag)</code></pre>
+<pre><code>## [1] 6.4</code></pre>
+<pre class="r"><code>median(quakes$mag)</code></pre>
+<pre><code>## [1] 4.6</code></pre>
+<pre class="r"><code>mean(quakes$mag)</code></pre>
+<pre><code>## [1] 4.6204</code></pre>
+<pre class="python"><code>import numpy as np
+quakes.mag.describe()</code></pre>
+<pre><code>## count    1000.000000
+## mean        4.620400
+## std         0.402773
+## min         4.000000
+## 25%         4.300000
+## 50%         4.600000
+## 75%         4.900000
+## max         6.400000
+## Name: mag, dtype: float64</code></pre>
+<p>One thing to note is the difference in syntax between the two languages, and the ease of the describe function in python which summarizes all of the statistical functions rather than individually calculating them in R. # Cool feature R and Python are actually able to communicate with each other, so you'd be capable of using R datasets in python without necessarily importing them. This is show below</p>
+<pre class="python"><code>r.quakes.mag.describe()</code></pre>
+<pre><code>## count    1000.000000
+## mean        4.620400
+## std         0.402773
+## min         4.000000
+## 25%         4.300000
+## 50%         4.600000
+## 75%         4.900000
+## max         6.400000
+## Name: mag, dtype: float64</code></pre>
+<p>This line of code is describing the quakes dataset from R, rather than the one manually imported into python earlier. It's a very useful tool!</p>
+</div>
+
+            
+        <hr>         <div class="related-posts">
+                <h5>Related Posts</h5>
+                
+                  <div class="row">
+                    <div class="col-sm-4 col-md-4 col-lg-4">
+                      <h6 style="text-align: right">
+                        July 23, 2015
+                      </h6>
+                    </div>
+                    <div class="col-sm-8 col-md-8 col-lg-8">
+                      <h6 style="text-align: left">
+                        <strong><a href="../../../../../post/2015/07/23/hello-r-markdown/">Hello R Markdown</a></strong>
+                      </h6>
+                    </div>
+                  </div>
+                
+              </div> 
+            </div>
+          </div>
+
+   <hr>  <div class="disqus">
+  <div id="disqus_thread"></div>
+  <script type="text/javascript">
+
+    (function() {
+      
+      
+      if (window.location.hostname == "localhost")
+        return;
+
+      var disqus_shortname = '';
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  <a href="http://disqus.com/" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div> 
+        </div>
+      </div>
+    </div>
+
+    
+    <footer>
+  <div id="footer">
+    <div class="container">
+      <p class="text-muted">&copy; All rights reserved. Powered by <a href="https://gohugo.io/">Hugo</a> and
+      <a href="http://www.github.com/nurlansu/hugo-sustain/">sustain</a> with ♥</p>
+    </div>
+  </div>
+</footer>
+<div class="footer"></div>
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script src="../../../../../js/docs.min.js"></script>
+<script src="../../../../../js/main.js"></script>
+
+<script src="../../../../../js/ie10-viewport-bug-workaround.js"></script>
+
+
+    
+  </body>
+</html>

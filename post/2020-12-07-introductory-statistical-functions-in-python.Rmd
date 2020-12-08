@@ -1,0 +1,52 @@
+---
+title: Introductory Statistical Functions in Python
+author: Samuel Oshoba
+date: '2020-12-07'
+slug: introductory-statistical-functions-in-python
+categories: []
+tags:
+  - python
+  - R Markdown
+  - stats
+description: ''
+---
+![](/post/2020-12-07-introductory-statistical-functions-in-python_files/python.jpg)
+
+# Introduction
+
+Throughout SDS 348, I and other students primarily learned how to do a variety of functions using R. However, in the latter portion of the course we were introduced to Python, and learned that the two languages weren't too different from each other. In this blog, I'll take you through some very basic statistical functions that can be performed within Python.
+
+# Importing and observing datasets
+
+The process of doing so in R is quite simple, especially when dealing with datasets already in R. To observe the dataset, is as easy as using the head function, and nrow and ncol to quantify row and column numbers.
+```{r}
+head(quakes)
+nrow(quakes)
+ncol(quakes)
+```
+In Python however, importing the data is a little more arduous, and there is a different function to find row and column numbers; "shape".
+```{python}
+import pandas as pd
+quakes=pd.read_csv("https://vincentarelbundock.github.io/Rdatasets/csv/datasets/quakes.csv",index_col=0)
+quakes.shape
+```
+# Basic functions
+
+The basic functions that we'll be discussing are minimum, maximum, median, and mean values. Below will be a comparison of how they are calculated in R, and in Python
+```{r}
+min(quakes$mag)
+max(quakes$mag)
+median(quakes$mag)
+mean(quakes$mag)
+```
+```{python}
+import numpy as np
+quakes.mag.describe()
+```
+One thing to note is the difference in syntax between the two languages, and the ease of the describe function in python which summarizes all of the statistical functions rather than individually calculating them in R.
+# Cool feature
+R and Python are actually able to communicate with each other, so you'd be capable of using R datasets in python without necessarily importing them. This is show below
+```{python}
+r.quakes.mag.describe()
+```
+This line of code is describing the quakes dataset from R, rather than the one manually imported into python earlier. It's a very useful tool!

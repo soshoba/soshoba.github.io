@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>python on Project 3: My Website</title>
+    <link>/tags/python/</link>
+    <description>Recent content in python on Project 3: My Website</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-US</language>
+    <lastBuildDate>Mon, 07 Dec 2020 00:00:00 +0000</lastBuildDate><atom:link href="/tags/python/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Introductory Statistical Functions in Python</title>
+      <link>/post/2020/12/07/introductory-statistical-functions-in-python/</link>
+      <pubDate>Mon, 07 Dec 2020 00:00:00 +0000</pubDate>
+      
+      <guid>/post/2020/12/07/introductory-statistical-functions-in-python/</guid>
+      <description>Introduction Throughout SDS 348, I and other students primarily learned how to do a variety of functions using R. However, in the latter portion of the course we were introduced to Python, and learned that the two languages weren&#39;t too different from each other. In this blog, I&#39;ll take you through some very basic statistical functions that can be performed within Python.
+ Importing and observing datasets The process of doing so in R is quite simple, especially when dealing with datasets already in R.</description>
+    </item>
+    
+  </channel>
+</rss>

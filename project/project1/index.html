@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="en-US">
+  <head>
+    <meta charset="utf-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="author" content="Samuel Oshoba" />
+    
+    <link rel="shortcut icon" type="image/x-icon" href="../../img/favicon.ico">
+    <title>Project 1: Exploratory Data Analysis</title>
+    <meta name="generator" content="Hugo 0.79.0" />
+    <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css" integrity="sha384-BVYiiSIFeK1dGmJRAkycuHAHRg32OmUcww7on3RYdg4Va+PmSTsz/K68vbdEjh4u" crossorigin="anonymous">
+    <link rel="stylesheet" type="text/css" href="../../css/main.css" />
+    <link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.7.0/css/font-awesome.min.css" />
+    <link rel="stylesheet" type="text/css" href="https://fonts.googleapis.com/css?family=Source+Sans+Pro:200,400,200bold,400old" />
+    
+    <!--[if lt IE 9]>
+			<script src="https://oss.maxcdn.com/libs/html5shiv/3.7.0/html5shiv.js"></script>
+			<script src="https://oss.maxcdn.com/libs/respond.js/1.4.2/respond.min.js"></script>
+		<![endif]-->
+
+    
+  </head>
+
+  <body>
+    <div id="wrap">
+      
+      <nav class="navbar navbar-default">
+  <div class="container">
+    <div class="navbar-header">
+      <a class="navbar-brand" href="../../"><i class="fa fa-home"></i></a>
+      <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#navbar">
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+        <span class="icon-bar"></span>
+      </button>
+    </div>
+    <div class="navbar-collapse collapse" id="navbar">
+      <ul class="nav navbar-nav navbar-right">
+      
+        
+        <li><a href="../../post/">BLOG</a></li>
+        
+        <li><a href="../../projects/">PROJECTS</a></li>
+        
+        <li><a href="../../resume/">RESUME</a></li>
+        
+      
+      </ul>
+    </div>
+  </div>
+</nav>
+
+      <div class="container">
+        <div class="blog-post">
+          <h3>
+            <strong><a href="../../project/project1/">Project 1: Exploratory Data Analysis</a></strong>
+          </h3>
+        </div>
+ 
+<div class="blog-title">
+          <h4>
+         December 7, 2020 
+            &nbsp;&nbsp;
+            
+          </h4>
+        </div>
+
+        <div class="panel panel-default">
+          <div class="panel-body">
+            <div class="blogpost">
+              
+
+
+<div id="samuel-oshobas-soo328-data-exploration-and-wrangling-project" class="section level2">
+<h2>Samuel Oshoba's (soo328) Data Exploration and Wrangling Project</h2>
+<div id="introduction" class="section level3">
+<h3>Introduction</h3>
+<p>The datasets I have chosen are from health.gov and are related to the ongoing pandemic. COVID-19 has been the topic of all our attention for several months now, and I found it appropriate that I'd analyze some available data surrounding it, to potentially observe some of the trends for myself. One of the datasets details the amount and percentage of occupied ICU beds across counties of different states, and the other dataset details the COVID-19 safety policies that are in place in the area. I expected to see that those areas with the strictest policies would have a lower percentage of occupied ICU beds.</p>
+</div>
+<div id="joining-data" class="section level3">
+<h3>Joining data:</h3>
+<pre class="r"><code>library(tidyverse)
+covid_icu_beds &lt;- read.csv(&quot;covid.icu.beds.csv&quot;)
+covid_policies &lt;- read.csv(&quot;covid.policies.csv&quot;)
+
+fulldata &lt;- full_join(covid_icu_beds, covid_policies, by = c(state = &quot;state_id&quot;))
+fulldata$Staffed.Adult.ICU.Beds.Occupied.Estimated &lt;- as.numeric(as.character(fulldata$Staffed.Adult.ICU.Beds.Occupied.Estimated))
+fulldata$Total.Staffed.Adult.ICU.Beds &lt;- as.numeric(as.character(fulldata$Total.Staffed.Adult.ICU.Beds))
+fulldata$Percentage.of.Staffed.Adult.ICU.Beds.Occupied.Estimated &lt;- as.numeric(as.character(fulldata$Percentage.of.Staffed.Adult.ICU.Beds.Occupied.Estimated))</code></pre>
+<p>Chose to utilize the full join so as to preserve the most amount of cases. However, in doing so this introduced a lot of NA's into the dataset, which I eventually removed. The join variable I used was state, and this was because it was their main variable in common.</p>
+</div>
+</div>
+<div id="wrangling" class="section level1">
+<h1>Wrangling</h1>
+<pre class="r"><code># removing nas and unnecessary columns
+covid.nas &lt;- fulldata %&gt;% na.omit() %&gt;% select(-4, -5, -7, -8, 
+    -10, -11, -18, -19)
+# summary stats
+covid.by.state.policy &lt;- covid.nas %&gt;% group_by(state, policy_type) %&gt;% 
+    summarize(mean_occupied = mean(Percentage.of.Staffed.Adult.ICU.Beds.Occupied.Estimated), 
+        sd_occupied = sd(Percentage.of.Staffed.Adult.ICU.Beds.Occupied.Estimated), 
+        n_occupied = n())
+head(covid.by.state.policy)</code></pre>
+<pre><code>## # A tibble: 6 x 5
+## # Groups:   state [2]
+##   state policy_type              mean_occupied sd_occupied n_occupied
+##   &lt;fct&gt; &lt;fct&gt;                            &lt;dbl&gt;       &lt;dbl&gt;      &lt;int&gt;
+## 1 HI    Entertainment                     67.2        6.03         62
+## 2 HI    Mask Requirement                  67.2        6.03         62
+## 3 HI    Non-Essential Businesses          67.2        6.03         62
+## 4 HI    Outdoor and Recreation            67.2        6.03         62
+## 5 HI    Phase 1                           67.2        6.03         62
+## 6 ID    Childcare (K-12)                  63.8        3.25         31</code></pre>
+<pre class="r"><code>covid.by.policy &lt;- covid.nas %&gt;% group_by(policy_type) %&gt;% summarize(mean_occupied = mean(Percentage.of.Staffed.Adult.ICU.Beds.Occupied.Estimated), 
+    sd_occupied = sd(Percentage.of.Staffed.Adult.ICU.Beds.Occupied.Estimated), 
+    n_occupied = n(), max(mean_occupied), min(mean_occupied))
+covid.nas %&gt;% summarize(max_occupied_beds = max(Total.Staffed.Adult.ICU.Beds), 
+    min_occupied_beds = min(Total.Staffed.Adult.ICU.Beds))</code></pre>
+<pre><code>##   max_occupied_beds min_occupied_beds
+## 1               725                78</code></pre>
+<pre class="r"><code># Using more Dplyr functions
+covid.by.state.policy %&gt;% select(state, mean_occupied) %&gt;% arrange(-mean_occupied)</code></pre>
+<pre><code>## # A tibble: 37 x 2
+## # Groups:   state [7]
+##    state mean_occupied
+##    &lt;fct&gt;         &lt;dbl&gt;
+##  1 ME             69.9
+##  2 ME             69.9
+##  3 ME             69.9
+##  4 NE             69.0
+##  5 NE             69.0
+##  6 NE             69.0
+##  7 NE             69.0
+##  8 NE             69.0
+##  9 NE             69.0
+## 10 HI             67.2
+## # … with 27 more rows</code></pre>
+<pre class="r"><code>covid.nas %&gt;% filter(policy_level == &quot;county&quot;) %&gt;% mutate(unoccupied_beds = Total.Staffed.Adult.ICU.Beds - 
+    Staffed.Adult.ICU.Beds.Occupied.Estimated) %&gt;% select(state, 
+    Staffed.Adult.ICU.Beds.Occupied.Estimated, policy_type, unoccupied_beds)</code></pre>
+<pre><code>##    state Staffed.Adult.ICU.Beds.Occupied.Estimated              policy_type
+## 1     ID                                       187                 Day Care
+## 2     ID                                       187            Entertainment
+## 3     ID                                       187   Outdoor and Recreation
+## 4     ID                                       187                  Phase 4
+## 5     ID                                       187                 Day Care
+## 6     ID                                       187            Entertainment
+## 7     ID                                       187         Mask Requirement
+## 8     ID                                       187 Non-Essential Businesses
+## 9     ID                                       187                  Phase 4
+## 10    ID                                       187   Outdoor and Recreation
+## 11    ID                                       187           Food and Drink
+## 12    ID                                       187 Non-Essential Businesses
+## 13    ID                                       187         Childcare (K-12)
+## 14    ID                                       187        Houses of Worship
+## 15    ID                                       187         Mask Requirement
+## 16    ID                                       187           Food and Drink
+## 17    ID                                       187           Food and Drink
+## 18    ID                                       187        Houses of Worship
+## 19    ID                                       187         Mask Requirement
+## 20    ID                                       187                  Phase 3
+## 21    ID                                       198                 Day Care
+## 22    ID                                       198            Entertainment
+## 23    ID                                       198   Outdoor and Recreation
+## 24    ID                                       198                  Phase 4
+## 25    ID                                       198                 Day Care
+##    unoccupied_beds
+## 1              110
+## 2              110
+## 3              110
+## 4              110
+## 5              110
+## 6              110
+## 7              110
+## 8              110
+## 9              110
+## 10             110
+## 11             110
+## 12             110
+## 13             110
+## 14             110
+## 15             110
+## 16             110
+## 17             110
+## 18             110
+## 19             110
+## 20             110
+## 21              99
+## 22              99
+## 23              99
+## 24              99
+## 25              99
+##  [ reached &#39;max&#39; / getOption(&quot;max.print&quot;) -- omitted 6826 rows ]</code></pre>
+<p>My first set of summary statistics was the mean, standard deviation, and n of percentage of occupied beds, all grouped by state and policy type. The next set of summary statistics were the same as the prior one, except grouped only by policy type. Next the max and min amounts of total ICU beds were found, and then the same were found for the amount of occupied ICU beds. Finally, utilized additional dplyr functions like filter to find county level policies, determine how many unoccupied beds there with mutate, and select and arrange to display the ranking by state of percent occupied ICU beds.</p>
+</div>
+<div id="tidying-up" class="section level1">
+<h1>Tidying Up</h1>
+<pre class="r"><code># Practice tidying up
+covid.longer &lt;- covid.by.state.policy %&gt;% pivot_longer(c(3:5), 
+    names_to = &quot;stat&quot;, values_to = &quot;value&quot;)
+head(covid.longer)</code></pre>
+<pre><code>## # A tibble: 6 x 4
+## # Groups:   state [1]
+##   state policy_type      stat          value
+##   &lt;fct&gt; &lt;fct&gt;            &lt;chr&gt;         &lt;dbl&gt;
+## 1 HI    Entertainment    mean_occupied 67.2 
+## 2 HI    Entertainment    sd_occupied    6.03
+## 3 HI    Entertainment    n_occupied    62   
+## 4 HI    Mask Requirement mean_occupied 67.2 
+## 5 HI    Mask Requirement sd_occupied    6.03
+## 6 HI    Mask Requirement n_occupied    62</code></pre>
+<pre class="r"><code>covid.wider &lt;- covid.longer %&gt;% pivot_wider(names_from = &quot;stat&quot;, 
+    values_from = &quot;value&quot;)</code></pre>
+<p>My data was already fairly tidy, so chose to simply practice some of the tidying functions on some of my summary stats. Chose to pivot 3 different summary stats into one column, and then pivot them wider to undo that.</p>
+</div>
+<div id="visualizations" class="section level1">
+<h1>Visualizations</h1>
+<pre class="r"><code># visualizations
+cordata &lt;- covid.nas %&gt;% select(c(3:5))
+cormat &lt;- signif(cor(cordata), 2)
+heatmap(cormat)</code></pre>
+<p><img src="../../project/project1_files/figure-html/unnamed-chunk-4-1.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>library(ggplot2)
+ggplot(data = covid.by.policy, mapping = aes(x = policy_type, 
+    y = mean_occupied, fill = n_occupied)) + geom_bar(stat = &quot;summary&quot;) + 
+    labs(title = &quot;Mean percent of occupied beds by Policy type&quot;, 
+        x = &quot;Policy Type&quot;, y = &quot;Mean percent of occupied beds&quot;) + 
+    theme(axis.text.x = element_text(angle = 90, vjust = 0.5, 
+        hjust = 1)) + scale_y_continuous(&quot;Mean percent of occupied beds&quot;, 
+    breaks = seq(0, 60, by = 5))</code></pre>
+<p><img src="../../project/project1_files/figure-html/unnamed-chunk-4-2.png" width="672" style="display: block; margin: auto;" /></p>
+<pre class="r"><code>covid.by.state &lt;- covid.nas %&gt;% group_by(covid.nas$state) %&gt;% 
+    summarize(mean_occupied = mean(Percentage.of.Staffed.Adult.ICU.Beds.Occupied.Estimated), 
+        sd_occupied = sd(Percentage.of.Staffed.Adult.ICU.Beds.Occupied.Estimated), 
+        n_occupied = n(), max(mean_occupied), min(mean_occupied))
+distinct.states &lt;- covid.by.state %&gt;% distinct()
+ggplot(data = covid.by.state.policy, mapping = aes(x = state, 
+    y = mean_occupied, fill = sd_occupied)) + geom_histogram(stat = &quot;identity&quot;) + 
+    theme(axis.text.x = element_text(angle = 30, vjust = 0.5, 
+        hjust = 1)) + labs(title = &quot;Mean number of occupied beds by State&quot;, 
+    x = &quot;State&quot;, y = &quot;Mean number of occupied beds&quot;)</code></pre>
+<p><img src="../../project/project1_files/figure-html/unnamed-chunk-4-3.png" width="672" style="display: block; margin: auto;" /></p>
+<p>For the correlation heatmap, strong corrleations are deep red/burgundy, weaker ones are orange, and the weakest are yellow.</p>
+<p>The bar plot of mean percent of occupied beds across policy types shows no conclusive evidence of relationships. On the x-axis was the type of restrictive policy enacted, and on the y-axis was the mean percent of occupied ICU beds. The plot is relatively even across the board and suggests that the COVID restriction policies didn't really have a significant impact on the percentage of occupied ICU beds. This was actually a suprising result, as it would make sense for the level of activity to correlate with the amount of COVID cases and thus ICU beds being used.</p>
+<p>The next plot was a histogram mean amount of occupied ICU beds in each hospital by State. It should also be noted that the histogram was colored by the standard deviation, with lighter blues having the most deviation. This histogram has much clearer results than the last graph, and it can be observed that the state with the highest average amount of occupied ICU beds is Idaho. The state with the seemgingly lowest average is Utah.</p>
+</div>
+<div id="k-meanspam-clustering-or-pca-on-at-least-your-numeric-variables." class="section level1">
+<h1>k-means/PAM clustering or PCA on (at least) your numeric variables.</h1>
+<pre class="r"><code># pam
+library(cluster)
+covid.pam &lt;- covid.nas %&gt;% select(c(3:5)) %&gt;% pam(k = 4)
+covid.pam</code></pre>
+<pre><code>## Medoids:
+##         ID Staffed.Adult.ICU.Beds.Occupied.Estimated
+## 27024 1268                                       191
+## 41656 2557                                       111
+## 64821 6156                                       120
+## 55305 4714                                       439
+##       Percentage.of.Staffed.Adult.ICU.Beds.Occupied.Estimated
+## 27024                                                   68.56
+## 41656                                                   60.00
+## 64821                                                   56.48
+## 55305                                                   68.24
+##       Total.Staffed.Adult.ICU.Beds
+## 27024                          279
+## 41656                           90
+## 64821                          190
+## 55305                          643
+## Clustering vector:
+##  840  844  845  848  849  850  851  852  853  854  856  857  858  862  866  867 
+##    1    1    1    1    1    1    1    1    1    1    1    1    1    1    1    1 
+##  871  872  873  874 1055 1059 1060 1063 1064 1065 1066 1067 1068 1069 1071 1072 
+##    1    1    1    1    1    1    1    1    1    1    1    1    1    1    1    1 
+## 1073 1077 1081 1082 1086 1087 1088 1089 1270 1274 1275 1278 1279 1280 1281 1282 
+##    1    1    1    1    1    1    1    1    1    1    1    1    1    1    1    1 
+## 1283 1284 1286 1287 1288 1292 1296 1297 1301 1302 1303 1304 1485 1489 1490 1493 
+##    1    1    1    1    1    1    1    1    1    1    1    1    1    1    1    1 
+## 1494 1495 1496 1497 1498 1499 1501 1502 1503 1507 1511 1512 1516 1517 1518 1519 
+##    1    1    1    1    1    1    1    1    1    1    1    1    1    1    1    1 
+## 1700 1704 1705 1708 1709 1710 1711 1712 1713 1714 1716 1717 1718 1722 1726 1727 
+##    1    1    1    1    1    1    1    1    1    1    1    1    1    1    1    1 
+## 1731 1732 1733 1734 
+##    1    1    1    1 
+##  [ reached getOption(&quot;max.print&quot;) -- omitted 6751 entries ]
+## Objective function:
+##    build     swap 
+## 25.18204 21.44526 
+## 
+## Available components:
+##  [1] &quot;medoids&quot;    &quot;id.med&quot;     &quot;clustering&quot; &quot;objective&quot;  &quot;isolation&quot; 
+##  [6] &quot;clusinfo&quot;   &quot;silinfo&quot;    &quot;diss&quot;       &quot;call&quot;       &quot;data&quot;</code></pre>
+<pre class="r"><code>pam.clust &lt;- covid.nas %&gt;% select(c(3:5)) %&gt;% mutate(cluster = as.factor(covid.pam$clustering))
+pam.clust %&gt;% ggplot(aes(Percentage.of.Staffed.Adult.ICU.Beds.Occupied.Estimated, 
+    Total.Staffed.Adult.ICU.Beds, color = cluster)) + geom_point()</code></pre>
+<p><img src="../../project/project1_files/figure-html/unnamed-chunk-5-1.png" width="672" style="display: block; margin: auto;" /> The plot of the PAM displays 4 distinct groups. There's a group of low total amount of beds, slightly greater, medium, and high amount of total beds. However, the amount of beds seems to be main determination of clustering, as there is a significant amount of variation within the percentage of occupied ICU beds, especially in the lower clusters. There doesn't seem to be a significant relationship between the percentage of occupied ICU beds and the total amount of ICU beds. This makes sense conceptually as just because the amount of ICU beds increases, doesn't mean the relative demand for them will change.</p>
+<P style="page-break-before: always">
+
+<p>options(tinytex.verbose = TRUE)<br />
+...</p>
+</div>
+
+            
+        <hr>         <div class="related-posts">
+                <h5>Related Posts</h5>
+                
+              </div> 
+            </div>
+          </div>
+
+   <hr>  <div class="disqus">
+  <div id="disqus_thread"></div>
+  <script type="text/javascript">
+
+    (function() {
+      
+      
+      if (window.location.hostname == "localhost")
+        return;
+
+      var disqus_shortname = '';
+      var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+      dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+      (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+    })();
+  </script>
+  <noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+  <a href="http://disqus.com/" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+</div> 
+        </div>
+      </div>
+    </div>
+
+    
+    <footer>
+  <div id="footer">
+    <div class="container">
+      <p class="text-muted">&copy; All rights reserved. Powered by <a href="https://gohugo.io/">Hugo</a> and
+      <a href="http://www.github.com/nurlansu/hugo-sustain/">sustain</a> with ♥</p>
+    </div>
+  </div>
+</footer>
+<div class="footer"></div>
+
+
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.11.3/jquery.min.js"></script>
+
+<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js" integrity="sha384-Tc5IQib027qvyjSMfHjOMaLkfuWVxZxUPnCJA7l2mCWNIpG9mGCD8wGNIcPD7Txa" crossorigin="anonymous"></script>
+<script src="../../js/docs.min.js"></script>
+<script src="../../js/main.js"></script>
+
+<script src="../../js/ie10-viewport-bug-workaround.js"></script>
+
+
+    
+  </body>
+</html>

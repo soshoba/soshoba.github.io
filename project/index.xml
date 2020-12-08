@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Projects on Project 3: My Website</title>
+    <link>/project/</link>
+    <description>Recent content in Projects on Project 3: My Website</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-US</language>
+    <lastBuildDate>Mon, 07 Dec 2020 00:00:00 +0000</lastBuildDate><atom:link href="/project/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>Project 1: Exploratory Data Analysis</title>
+      <link>/project/project1/</link>
+      <pubDate>Mon, 07 Dec 2020 00:00:00 +0000</pubDate>
+      
+      <guid>/project/project1/</guid>
+      <description>Samuel Oshoba&#39;s (soo328) Data Exploration and Wrangling Project Introduction The datasets I have chosen are from health.gov and are related to the ongoing pandemic. COVID-19 has been the topic of all our attention for several months now, and I found it appropriate that I&#39;d analyze some available data surrounding it, to potentially observe some of the trends for myself. One of the datasets details the amount and percentage of occupied ICU beds across counties of different states, and the other dataset details the COVID-19 safety policies that are in place in the area.</description>
+    </item>
+    
+    <item>
+      <title>Project 2: Modeling, Testing, and Predicting</title>
+      <link>/project/project2/</link>
+      <pubDate>Mon, 07 Dec 2020 00:00:00 +0000</pubDate>
+      
+      <guid>/project/project2/</guid>
+      <description>Modeling  Samuel Oshoba Soo328 #Dataset import Males &amp;lt;- read.csv(&amp;quot;Males.csv&amp;quot;) Data &amp;lt;- Males %&amp;gt;% select(-1) Data &amp;lt;- Data %&amp;gt;% filter(!is.na(school)) Data &amp;lt;- Data %&amp;gt;% filter(!is.na(exper)) Data &amp;lt;- Data %&amp;gt;% filter(!is.na(union)) Data &amp;lt;- Data %&amp;gt;% filter(!is.na(ethn)) Data &amp;lt;- Data %&amp;gt;% filter(!is.na(maried)) Data &amp;lt;- Data %&amp;gt;% filter(!is.na(health)) Data &amp;lt;- Data %&amp;gt;% filter(!is.na(wage)) Data &amp;lt;- Data %&amp;gt;% filter(!is.na(school)) Data &amp;lt;- Data %&amp;gt;% filter(!is.na(industry)) Data &amp;lt;- Data %&amp;gt;% filter(!is.na(occupation)) head(Data) ## nr year school exper union ethn maried health wage industry ## 1 13 1980 14 1 no other no no 1.</description>
+    </item>
+    
+  </channel>
+</rss>

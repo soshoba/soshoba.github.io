@@ -1,0 +1,291 @@
+---
+title: 'Project 2: Modeling, Testing, and Predicting'
+author: "SDS348"
+date: '2020-12-07'
+output:
+  html_document:
+    toc: yes
+    toc_float:
+      collapsed: no
+      smooth_scroll: yes
+---
+
+```{r setup, include=FALSE}
+library(knitr)
+hook_output = knit_hooks$get('output')
+knit_hooks$set(output = function(x, options) {
+  # this hook is used only when the linewidth option is not NULL
+  if (!is.null(n <- options$linewidth)) {
+    x = knitr:::split_lines(x)
+    # any lines wider than n should be wrapped
+    if (any(nchar(x) > n)) x = strwrap(x, width = n)
+    x = paste(x, collapse = '\n')
+  }
+  hook_output(x, options)
+})
+
+knitr::opts_chunk$set(echo = TRUE, eval = TRUE,fig.align="center",warning=FALSE,message=FALSE,fig.width=8, fig.height=5, linewidth=60)
+options(tibble.width = 100,width = 100)
+library(tidyverse)
+library(lmtest)
+library(sandwich)
+```
+
+# Modeling
+# Samuel Oshoba Soo328
+
+```{r}
+#Dataset import
+Males <- read.csv("Males.csv")
+Data <- Males %>% select(-1)
+Data <- Data %>% filter(!is.na(school))
+Data <- Data %>% filter(!is.na(exper))
+Data <- Data %>% filter(!is.na(union))
+Data <- Data %>% filter(!is.na(ethn))
+Data <- Data %>% filter(!is.na(maried))
+Data <- Data %>% filter(!is.na(health))
+Data <- Data %>% filter(!is.na(wage))
+Data <- Data %>% filter(!is.na(school))
+Data <- Data %>% filter(!is.na(industry))
+Data <- Data %>% filter(!is.na(occupation))
+
+head(Data)
+
+```
+
+The "Males" dataset is a dataset from the National Longitudinal Survey (NLS Youth Sample). It describes the wages and education of 545 young men in the US from 1980 to 1987, for a total of 4360 observations. It breaks down across several factors including marriage status, region, health problems, and labor union participation. The column headers are; 
+nr = identifier 
+year = year
+school = years of schooling 
+exper = years of experience (=age-6-school) 
+union = Are they in a labor union
+ethn = a factor with levels (black,hisp,other),
+married= mariage status, 
+health = health problem ?,
+wage = log of hourly wage, 
+industry = a factor with 12 levels, occupation = a factor with 9 levels
+residence = a factor with levels (rural area, north east, nothern central, south)
+```{r}
+#MANOVA
+library(rstatix)
+
+group <- Data$residence
+DVs <- Data %>% select(wage,exper,school)
+
+#Test multivariate normality for each group (null: assumption met)
+sapply(split(DVs,group), mshapiro_test)
+
+#If any p<.05, stop (assumption violated). If not, test homogeneity of covariance matrices
+
+#Box's M test (null: homogeneity of vcov mats assumption met)
+box_m(DVs, group)
+
+#Optionally View covariance matrices for each group
+lapply(split(DVs,group), cov)
+
+#Manova test
+man1<-manova(cbind(wage,exper,school)~residence, data=Data)
+summary(man1)
+summary.aov(man1)
+
+pairwise.t.test(Data$wage,
+Data$residence, p.adj="none")
+
+pairwise.t.test(Data$school,
+Data$residence, p.adj="none")
+```
+Performed MANOVA test using numeric variables of wage, years of schooling, and years of experience against place of residence. Tests of MANOVA assumptions were performed to assess multivariate normality, and homogenity of covariance matrices. However the test results were uncertain as much of the test output resulted in NA's, but the test was performed nonetheless. 
+Performed univariate ANOVAs finding signifcant effects for wage and years of schooling so performed t-tests for those. 9 tests performed in total (1 MANOVA, 2 ANOVAs, and 6 t tests), corrected alpha = .05/9 = .0056, without correction there's a 0.37 chance of at least 1 type 1 error. After correction is accounted for, wage is the only variable that varies significntly across residence groups.
+
+```{r}
+#randomization test; ANOVA
+summary(aov(wage~residence,data=Data))
+obs_F <- 10.97
+
+
+Fs<-replicate(5000,{ #do everything in curly braces 5000 times and save the output
+new<-Data%>%mutate(wage=sample(wage)) #randomly permute response variable (len)
+#compute the F-statistic by hand
+SSW<- new%>%group_by(residence)%>%summarize(SSW=sum((wage-mean(wage))^2))%>%
+summarize(sum(SSW))%>%pull
+SSB<- new%>%mutate(mean=mean(wage))%>%group_by(residence)%>%mutate(groupmean=mean(wage))%>%
+summarize(SSB=sum((mean-groupmean)^2))%>%summarize(sum(SSB))%>%pull
+(SSB/3)/(SSW/3111) #compute F statistic (num df = K-1 = 4-1, denom df = N-K = 3115 (1245 observations missing) -4)
+})
+mean(Fs>obs_F) 
+
+hist(Fs, prob=T,xlim=c(0,12)); abline(v = obs_F, col="red",add=T)
+
+
+```
+Null hypothesis is that the null distribution will be the same as the observed f statistic of 10.97, and therefore there'd be no difference in wage across different places of residence. However, the proportion of F statistics as compared to the observed f stat was 0, meaning the P-value was found to be about zero, which means there is a signifcant difference in wages for young men across different regions in the US. This is reasonable, as costs of living and thus income are known to vary based on where you reside. The plot visualizes the null distribution of F statistics and displays how the observed f statistic is much larger than all of those found from the randomization test.
+
+```{r}
+#Regression
+data_c <- Data %>% mutate(exper_c = Data$exper - mean(Data$exper, na.rm = T)) 
+dataglm <- lm(wage~exper_c * residence, data= data_c)
+coeftest(dataglm)
+
+ggplot(data_c, aes(x=exper_c, y= wage, group=residence))+geom_point(aes(color=residence))+
+geom_smooth(method="lm",formula=y~1,se=F,fullrange=T,aes(color=residence))+
+theme(legend.position=c(.9,.19))+xlab("Mean Centered Years of Experience") + ylab("Hourly Wage") + ylim(-2,4)
+
+resids<-dataglm$residuals
+fitvals<-dataglm$fitted.values
+ggplot()+geom_point(aes(fitvals,resids))+geom_hline(yintercept=0, color='red')
+ggplot()+geom_histogram(aes(resids), bins=20)
+ggplot()+geom_qq(aes(sample=resids))
+shapiro.test(resids)
+bptest(dataglm)
+plot(fitvals,resids)
+
+#Regression with robust SE's
+coeftest(dataglm,vcov=vcovHC(dataglm))[,1:2]
+
+#R^2
+(sum((Data$wage-mean(Data$wage))^2)-sum(dataglm$residuals^2))/sum((Data$wage-mean(Data$wage))^2)
+
+                    
+
+```
+The intercept means that a male of average work experience in the north east can expect about $1.77 an hour, and for every additional year of experience $.057 more per hour can be made. A North central man can expect 12 cents less per hour than the intercept, as well as $.007 less of a raise each year. For rural men these numbers are -18 cents and -$.05 respectively, and for southern men they are -15 cents and -$0.03 respectively.
+
+Regression failed normality assumption, but passes heteroskedasticity and linearity assumptions as seen from plot of residuals and fitted values.
+
+No significant changes in results after model was performed with robust SE's. Significant results of the intercept, mean centered experience, residence, and the interactions of experience and rural / southern residents.
+
+Model explains about 32.6% of variation, meaning the vast majority of the variation is unexplained.
+
+```{r}
+#Bootstrapping
+samp_distn<-replicate(5000, {bootdat <- sample_frac(data_c, replace=T)
+bootfit <- lm(wage~exper_c*residence, data=bootdat)
+coef(bootfit)}) 
+samp_distn %>% t %>% as.data.frame %>% summarize_all(sd)
+
+```
+Very similar SE's and p-values as compared to the original model. 
+
+```{r}
+#Binary Regression
+binary.data<-data_c%>%mutate(y=ifelse(union=="yes",1,0))
+head(binary.data)
+binary.glm<- glm(y~wage+industry,data=binary.data,family=binomial (link = "logit"))
+summary(binary.glm)
+
+#Class Diag
+class_diag<-function(probs,truth){
+  tab<-table(factor(probs>.5,levels=c("FALSE","TRUE")),truth)
+  acc=sum(diag(tab))/sum(tab)
+  sens=tab[2,2]/colSums(tab)[2]
+  spec=tab[1,1]/colSums(tab)[1]
+  ppv=tab[2,2]/rowSums(tab)[2]
+  f1=2*(sens*ppv)/(sens+ppv)
+
+  if(is.numeric(truth)==FALSE & is.logical(truth)==FALSE){
+    truth<-as.numeric(truth)-1}
+  
+  #CALCULATE EXACT AUC
+  ord<-order(probs, decreasing=TRUE)
+  probs <- probs[ord]; truth <- truth[ord]
+  
+  TPR=cumsum(truth)/max(1,sum(truth)) 
+  FPR=cumsum(!truth)/max(1,sum(!truth))
+  
+  dup<-c(probs[-1]>=probs[-length(probs)], FALSE)
+  TPR<-c(0,TPR[!dup],1); FPR<-c(0,FPR[!dup],1)
+  
+  n <- length(TPR)
+  auc<- sum( ((TPR[-1]+TPR[-n])/2) * (FPR[-1]-FPR[-n]) )
+
+  data.frame(acc,sens,spec,ppv,f1,auc)
+}
+
+#Confusion Matrix
+prob <- predict(binary.glm, type = "response")
+class_diag(prob, binary.data$y)
+truth1 <- binary.data$y
+table(prediction=as.numeric(prob>.5), truth1)
+
+#Density plot
+binary.data$logit<-predict(binary.glm) 
+binary.data %>% mutate(outcome=factor(union,levels=c("yes","no"))) %>%
+ggplot(aes(logit, fill=outcome))+geom_density(alpha=.3)+
+  geom_vline(xintercept=0,lty=2)
+
+#ROC and AUC
+library(plotROC)
+ROCplot<-ggplot(binary.data)+geom_roc(aes(d=union,m=logit), n.cuts=0) 
+calc_auc(ROCplot)
+ROCplot
+```
+The log odds of being in a union as someone with no wage in the agricultural field, is -2.45. That increases by 0.576 for each unit increase in wages, and also varies by a factor of which industry the male is in.
+
+sens 0.054 (rate of union members correctly identified as union members) acc 0.758, spec 0.985 (rate of non-union members correctly identified as non-union members), ppv 0.542 (amount of union members relative to all predictions of union members), auc 0.679	model's predictions of union status were 68% correct
+ROC curve shows relationship between sensitivity and specificity, and results reflect the AUC of 0.68.
+```{r}
+#Regression with *all* variables
+all.glm <- glm(y~school+exper_c+ethn+maried+health+wage+industry+occupation+residence, data = binary.data, family = binomial (link = "logit"))
+all.prob <- predict(all.glm, type= "response")
+class_diag(all.prob,all.glm$y)
+
+#10 fold
+set.seed(1234)
+k=10
+data2<-binary.data[sample(nrow(binary.data)),] #randomly order rows
+folds2<-cut(seq(1:nrow(binary.data)),breaks=k,labels=F) #create 10 folds
+diags2<-NULL
+for(i in 1:k){
+train2<-data2[folds2!=i,]
+test2<-data2[folds2==i,]
+truth2<-test2$y
+fit2<-glm(y~school+exper_c+ethn+maried+health+wage+industry+occupation+residence,data=train2,family="binomial")
+probs2<-predict(fit2,newdata = test2,type="response")
+diags2<-rbind(diags2,class_diag(probs2,truth2))
+}
+summarize_all(diags2, mean)
+
+#Lasso
+library(glmnet)
+set.seed(1234)
+data.mat<-model.matrix(fit2)[,-1]
+cv<-cv.glmnet(x=data.mat,y=as.matrix(fit2$y),family="binomial")
+lasso_fit<- glmnet(x=data.mat,y=as.matrix(fit2$y),family="binomial",alpha=1,lambda=cv$lambda.1se)
+coef(lasso_fit)
+
+#10 fold with Lasso results
+lassodata <- binary.data%>%mutate(ethnother=ifelse(ethn=="other",1,0))%>% mutate(healthy=ifelse(health=="yes",1,0))%>% mutate(business=ifelse(industry=="Business_and_Repair_Service",1,0))%>%  mutate(finance=ifelse(industry=="Finance",1,0))%>%  mutate(manufacturing=ifelse(industry=="Manufacturing",1,0))%>%  mutate(personalservice=ifelse(industry=="Personal_Service",1,0))%>%  mutate(prs=ifelse(industry=="Professional_and_Related Service",1,0))%>%  mutate(admin=ifelse(industry=="Public_Administration",1,0))%>%   mutate(trade=ifelse(industry=="Trade",1,0))%>%   mutate(transportation=ifelse(industry=="Transportation",1,0))%>%  mutate(foreman=ifelse(occupation=="Farm_Laborers_and_Foreman",1,0))%>%  mutate(farmer=ifelse(occupation=="Laborers_and_farmers",1,0))%>% mutate(manager=ifelse(occupation=="Managers, Officials_and_Proprietors",1,0))%>% mutate(kindred=ifelse(occupation=="Operatives_and_kindred",1,0))%>%  mutate(ptk=ifelse(occupation=="Professional, Technical_and_kindred",1,0))%>%  mutate(sales=ifelse(occupation=="Sales_Workers",1,0))%>%  mutate(service=ifelse(occupation=="Service_Workers",1,0))%>%
+select(ethnother,wage,residence,healthy,business,finance,manufacturing,personalservice,prs,admin,trade,transportation,foreman,farmer,manager,kindred,ptk,sales,service,y)
+
+set.seed(1234)
+k=10
+data3<-lassodata[sample(nrow(lassodata)),] #randomly order rows
+folds3<-cut(seq(1:nrow(lassodata)),breaks=k,labels=F) #create 10 folds
+diags3<-NULL
+for(i in 1:k){
+train3<-data3[folds2!=i,]
+test3<-data3[folds2==i,]
+truth3<-test3$y
+fit3<-glm(y~.,data=train3,family="binomial")
+probs3<-predict(fit3,newdata = test3,type="response")
+diags3<-rbind(diags3,class_diag(probs3,truth3))
+}
+summarize_all(diags3, mean)
+
+
+
+
+```
+Accuracy of 0.77 (overall proportion of correct predictions to total predictions made by model), sensitivity of 0.28 (rate of union members correctly identified as union members), specificity of 0.94 (rate of non-union members correctly identified as non-union members), precision of 0.59 (amount of union members relative to all predictions of union members) and AUC was 0.77, meaning the model's predictions of union status were 77% correct.
+
+After 10-fold CV, Accuracy of 0.77, sensitivity of 0.26, specificity of 0.93, precision of 0.57 and AUC oddly enough was "NA" after 10-fold CV
+
+Included variables were - Ethnicity; other, wage, industry; business & repair, finance, manufacturing, personal service, professional and related service, public admin, trade, transportation, occuptation; farm laborers, laborers and farmers, managers and proprietors, opeartives and kindred, professional technical and kindred, sales workers, serivce workers; and residence.
+
+Accuracy of 0.77, sensitivity of 0.26, specificity of 0.94, precision of 0.59 and AUC oddly enough was "NA" again. But overall the in sapmple and out of sample results were very similar with the exception of the AUC of course.
+...
+
+
+
+
+
